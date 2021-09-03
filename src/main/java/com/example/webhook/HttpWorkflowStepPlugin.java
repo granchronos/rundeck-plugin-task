@@ -55,12 +55,10 @@ public class HttpWorkflowStepPlugin implements StepPlugin {
             throw new StepException("Remote URL and Method are required.", StepFailureReason.ConfigurationFailure);
         }
 
-        //Use options in remote URL
         if (remoteUrl.contains("${")) {
             remoteUrl = DataContextUtils.replaceDataReferencesInString(remoteUrl, pluginStepContext.getDataContext());
         }
 
-        //Use options in body
         if (body != null && body.contains("${")) {
             body = DataContextUtils.replaceDataReferencesInString(body, pluginStepContext.getDataContext());
         }
@@ -89,7 +87,6 @@ public class HttpWorkflowStepPlugin implements StepPlugin {
         try {
             restTemplate.exchange(remoteUrl, Objects.requireNonNull(HttpMethod.resolve(method)), entity, String.class);
         } catch (Exception e) {
-            System.out.println("ERRRRROR" + e.getMessage() + e.getCause());
             throw new StepException(e.getCause(), StepFailureReason.ConfigurationFailure);
         }
     }

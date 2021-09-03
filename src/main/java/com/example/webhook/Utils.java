@@ -5,8 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
 import org.yaml.snakeyaml.Yaml;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +27,7 @@ public class Utils {
 
     public static HttpHeaders verifyHeadersAndSet(String headers, PluginLogger log) {
 
-        Map<String, String> map;
+        Map<String, String> map = new HashMap<>();
 
         // Example: "a=1,b=2,c=3=44=5555"
         try {
@@ -34,6 +41,7 @@ public class Utils {
 
         // Example: "{"field1":"value1","field2":"value2"}"
         if (map == null) {
+            map = new HashMap<>();
             try {
                 map = new ObjectMapper().readValue(headers, HashMap.class);
             } catch (Exception e) {
@@ -43,8 +51,33 @@ public class Utils {
 
         if (map == null) {
             Yaml yaml = new Yaml();
+            map = new HashMap<>();
             try {
                 map = yaml.loadAs(headers, HashMap.class);
+            } catch (Exception e) {
+                map = null;
+            }
+        }
+
+        if (map == null) {
+            map = new HashMap<>();
+            try {
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder builder;
+                builder = factory.newDocumentBuilder();
+                Document doc = builder.parse(new InputSource(new StringReader(headers)));
+                if (doc.hasAttributes()) {
+                    NamedNodeMap namedNodeMap = doc.getAttributes();
+                    for (int i = 0; i < namedNodeMap.getLength(); i++) {
+                        Node tempNode = namedNodeMap.item(i);
+                        String value = tempNode.getNodeValue();
+                        if (value != null) {
+                            map.put(tempNode.getNodeName(), value);
+                        }
+                    }
+                }
+
+
             } catch (Exception e) {
                 map = null;
             }
