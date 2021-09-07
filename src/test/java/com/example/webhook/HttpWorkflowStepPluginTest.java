@@ -20,20 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class HttpWorkflowStepPluginTest {
     protected static final String REMOTE_URL = "/trigger";
     protected static final String BOGUS_URL = "/bogus";
-    protected static final String REMOTE_BASIC_URL = "/trigger-basic";
     protected static final String REMOTE_SLOW_URL = "/slow-trigger";
     protected static final String REMOTE_OAUTH_URL = "/oauth";
-    protected static final String REMOTE_OAUTH_EXPIRED_URL = "/oauth-expired";
     protected static final String ERROR_URL_500 = "/error500";
-    protected static final String ERROR_URL_401 = "/error401";
     protected static final String NO_CONTENT_URL = "/nocontent204";
+
+    protected static final String BASE_URI_VALID = "https://run.mocky.io/v3/6e376f0f-0a69-45c2-a654-10dfef4b2c15";
 
     protected static final int REQUEST_TIMEOUT = 2 * 1000;
     protected static final int SLOW_TIMEOUT = 3 * 1000;
-
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(18089);
     protected HttpWorkflowStepPlugin plugin;
-
-    protected Map<String, Object> configuration;
     protected Map<String, Map<String, String>> dataContext;
     protected PluginStepContext pluginContext;
     protected PluginLogger pluginLogger;
@@ -63,23 +61,6 @@ public class HttpWorkflowStepPluginTest {
         return getExecutionOptions(method);
     }
 
-    /**
-     * Setup options for simple execution for the given method using OAuth 2.0.
-     *
-     * @param method HTTP Method to use.
-     * @return Options for the execution.
-     */
-    public Map<String, Object> getOAuthOptions(String method) {
-        Map<String, Object> options = getBasicOptions(method);
-
-        options.put("remoteUrl", Utils.BASE_URI + REMOTE_OAUTH_URL);
-
-        return options;
-    }
-
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(18089);
-
     @Before
     public void setUp() {
         plugin = new HttpWorkflowStepPlugin();
@@ -88,27 +69,27 @@ public class HttpWorkflowStepPluginTest {
         for (String method : Utils.HTTP_METHODS) {
             // Simple endpoint
             WireMock.stubFor(WireMock.request(method, WireMock.urlEqualTo(REMOTE_URL)).atPriority(100)
-                    .willReturn(WireMock.aResponse()
-                            .withStatus(200)));
+                .willReturn(WireMock.aResponse()
+                    .withStatus(200)));
 
             // 500 Error
             WireMock.stubFor(WireMock.request(method, WireMock.urlEqualTo(ERROR_URL_500))
-                    .willReturn(WireMock.aResponse()
-                            .withStatus(500)));
+                .willReturn(WireMock.aResponse()
+                    .withStatus(500)));
 
             // 204 No Content
             WireMock.stubFor(WireMock.request(method, WireMock.urlEqualTo(NO_CONTENT_URL))
-                    .willReturn(WireMock.aResponse()
-                            .withStatus(204)));
+                .willReturn(WireMock.aResponse()
+                    .withStatus(204)));
         }
 
         // Simple bogus URL that yields a 404
         WireMock.stubFor(WireMock.request("GET", WireMock.urlEqualTo(BOGUS_URL))
-                .willReturn(WireMock.aResponse().withStatus(404)));
+            .willReturn(WireMock.aResponse().withStatus(404)));
 
         // Timeout test
         WireMock.stubFor(WireMock.request("GET", WireMock.urlEqualTo(REMOTE_SLOW_URL))
-                .willReturn(WireMock.aResponse().withFixedDelay(SLOW_TIMEOUT).withStatus(200)));
+            .willReturn(WireMock.aResponse().withFixedDelay(SLOW_TIMEOUT).withStatus(200)));
 
 
         pluginContext = Mockito.mock(PluginStepContext.class);
@@ -181,7 +162,7 @@ public class HttpWorkflowStepPluginTest {
     public void canCallBasicEndpoint() throws StepException {
         for (String method : Utils.HTTP_METHODS) {
             Map<String, Object> options = this.getBasicOptions(method);
-            options.put("remoteUrl", Utils.BASE_URI_VALID) ;
+            options.put("remoteUrl", BASE_URI_VALID);
             this.plugin.executeStep(pluginContext, options);
         }
     }

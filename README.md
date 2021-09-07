@@ -1,1 +1,0 @@
-rundeck-plugin-task

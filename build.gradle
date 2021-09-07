@@ -1,0 +1,46 @@
+plugins {
+    id 'java'
+    id 'idea'
+}
+
+group 'com.example.webhook'
+version '1.0-SNAPSHOT'
+
+defaultTasks 'clean','build'
+sourceCompatibility = 1.8
+ext.rundeckPluginVersion= '1.2'
+ext.rundeckVersion= '3.4.3-20210823'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile( [group: 'org.rundeck', name: 'rundeck-core', version: rundeckVersion, ext:'jar'])
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.5.4'
+    implementation 'org.springframework.boot:spring-boot-starter-cache:2.5.4'
+    implementation 'org.yaml:snakeyaml:1.29'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    implementation 'org.apache.httpcomponents:httpclient-cache:4.5.13'
+    compileOnly 'org.projectlombok:lombok:1.18.20'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testImplementation 'org.powermock:powermock-module-junit4:2.0.9'
+    testImplementation 'org.mockito:mockito-all:1.10.19'
+    testImplementation 'com.github.tomakehurst:wiremock-standalone:2.27.2'
+    testImplementation 'org.powermock:powermock-api-mockito2:2.0.9'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+ext.pluginClassNames='com.example.webhook.HttpWorkflowStepPlugin'
+jar {
+    manifest {
+        attributes 'Rundeck-Plugin-Classnames': pluginClassNames
+        attributes 'Rundeck-Plugin-File-Version': version
+        attributes 'Rundeck-Plugin-Version': rundeckPluginVersion, 'Rundeck-Plugin-Archive': 'true'
+    }
+}
+

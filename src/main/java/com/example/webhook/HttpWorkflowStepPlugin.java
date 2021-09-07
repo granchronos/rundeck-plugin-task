@@ -1,5 +1,7 @@
 package com.example.webhook;
 
+import static com.example.webhook.Utils.restTemplate;
+
 import com.dtolabs.rundeck.core.dispatcher.DataContextUtils;
 import com.dtolabs.rundeck.core.execution.workflow.steps.StepException;
 import com.dtolabs.rundeck.core.execution.workflow.steps.StepFailureReason;
@@ -63,9 +65,9 @@ public class HttpWorkflowStepPlugin implements StepPlugin {
             body = DataContextUtils.replaceDataReferencesInString(body, pluginStepContext.getDataContext());
         }
 
-        RestTemplate restTemplate = this.restTemplate(new RestTemplateBuilder()
-                .setConnectTimeout(Duration.ofMillis(timeout))
-                .setReadTimeout(Duration.ofMillis(timeout)));
+        RestTemplate restTemplate = restTemplate(new RestTemplateBuilder()
+            .setConnectTimeout(Duration.ofMillis(timeout))
+            .setReadTimeout(Duration.ofMillis(timeout)));
 
         HttpHeaders requestHeaders = new HttpHeaders();
         HttpEntity<String> entity = null;
@@ -89,26 +91,5 @@ public class HttpWorkflowStepPlugin implements StepPlugin {
         } catch (Exception e) {
             throw new StepException(e.getCause(), StepFailureReason.ConfigurationFailure);
         }
-    }
-
-    public RestTemplate restTemplate(RestTemplateBuilder builder) throws GeneralSecurityException {
-        TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
-
-        SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom()
-                .loadTrustMaterial(null, acceptingTrustStrategy)
-                .build();
-
-        SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext);
-
-        CloseableHttpClient httpClient = HttpClients.custom()
-                .setSSLHostnameVerifier(new NoopHostnameVerifier())
-                .setSSLSocketFactory(csf)
-                .build();
-
-        HttpComponentsClientHttpRequestFactory requestFactory =
-                new HttpComponentsClientHttpRequestFactory();
-
-        requestFactory.setHttpClient(httpClient);
-        return builder.requestFactory(() -> requestFactory).build();
     }
 }
