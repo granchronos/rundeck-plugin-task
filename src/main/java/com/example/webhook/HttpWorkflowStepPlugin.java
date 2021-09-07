@@ -65,9 +65,19 @@ public class HttpWorkflowStepPlugin implements StepPlugin {
             body = DataContextUtils.replaceDataReferencesInString(body, pluginStepContext.getDataContext());
         }
 
-        RestTemplate restTemplate = restTemplate(new RestTemplateBuilder()
-            .setConnectTimeout(Duration.ofMillis(timeout))
-            .setReadTimeout(Duration.ofMillis(timeout)));
+        RestTemplate restTemplate;
+
+        try {
+            restTemplate = restTemplate(new RestTemplateBuilder()
+                .setConnectTimeout(Duration.ofMillis(timeout))
+                .setReadTimeout(Duration.ofMillis(timeout)));
+        } catch (GeneralSecurityException e) {
+            log.log(5, e.getMessage());
+            restTemplate = new RestTemplateBuilder()
+                .setConnectTimeout(Duration.ofMillis(timeout))
+                .setReadTimeout(Duration.ofMillis(timeout))
+                .build();
+        }
 
         HttpHeaders requestHeaders = new HttpHeaders();
         HttpEntity<String> entity = null;
