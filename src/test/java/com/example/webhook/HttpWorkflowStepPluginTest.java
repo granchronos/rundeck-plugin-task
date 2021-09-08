@@ -1,27 +1,25 @@
 package com.example.webhook;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import com.dtolabs.rundeck.core.execution.workflow.steps.StepException;
 import com.dtolabs.rundeck.core.execution.workflow.steps.StepFailureReason;
 import com.dtolabs.rundeck.plugins.PluginLogger;
 import com.dtolabs.rundeck.plugins.step.PluginStepContext;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.Assert.fail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class HttpWorkflowStepPluginTest {
     protected static final String REMOTE_URL = "/trigger";
     protected static final String BOGUS_URL = "/bogus";
     protected static final String REMOTE_SLOW_URL = "/slow-trigger";
-    protected static final String REMOTE_OAUTH_URL = "/oauth";
     protected static final String ERROR_URL_500 = "/error500";
     protected static final String NO_CONTENT_URL = "/nocontent204";
 
@@ -191,7 +189,7 @@ public class HttpWorkflowStepPluginTest {
     public void canHandleBadHost() throws StepException {
         Map<String, Object> options = new HashMap<>();
 
-        options.put("remoteUrl", "http://neverGoingToBe.aProperUrl/bogus");
+        options.put("remoteUrl", "https://neverGoingToBe.aProperUrl/bogus");
         options.put("method", "GET");
 
         this.plugin.executeStep(pluginContext, options);
