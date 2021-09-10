@@ -9,52 +9,59 @@ import com.dtolabs.rundeck.core.plugins.Plugin;
 import com.dtolabs.rundeck.plugins.PluginLogger;
 import com.dtolabs.rundeck.plugins.ServiceNameConstants;
 import com.dtolabs.rundeck.plugins.descriptions.PluginDescription;
+import com.dtolabs.rundeck.plugins.descriptions.PluginProperty;
 import com.dtolabs.rundeck.plugins.step.PluginStepContext;
 import com.dtolabs.rundeck.plugins.step.StepPlugin;
-import lombok.SneakyThrows;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import java.security.GeneralSecurityException;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-
-import javax.net.ssl.SSLContext;
-import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
-import java.time.Duration;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * Main implementation of the plugin. This will handle fetching
  * tokens when they're expired and sending the appropriate request.
  */
 @Plugin(name = HttpWorkflowStepPlugin.SERVICE_PROVIDER_NAME, service = ServiceNameConstants.WorkflowStep)
-@PluginDescription(title = "Rest GET, POST, PUT, DELETE Plugin", description = "Performs a GET, POST, PUT, DELETE to a rest resource")
+@PluginDescription(title = "Rest HTTP Plugin", description = "Performs a GET, POST, PUT, DELETE to a rest resource")
 public class HttpWorkflowStepPlugin implements StepPlugin {
 
     public static final String SERVICE_PROVIDER_NAME = "com.example.webhook.http.HttpWorkflowStepPlugin";
 
-    @SneakyThrows
+    @PluginProperty(title = "Remote URL", description = "Enter URL to be invoked.", required = true)
+    String remoteUrl;
+
+    @PluginProperty(title = "Methods HTTP", description = "Must be: \"GET\", \"POST\", \"PUT\", \"PATCH\", " +
+        "\"DELETE\", " +
+        "\"HEAD\", \"OPTIONS\"", required = true)
+    String method;
+
+    @PluginProperty(title = "Timeout", description = "Maximum wait time to respond, value in milliseconds.")
+    int timeout;
+
+    @PluginProperty(title = "Headers", description = "Headers for request")
+    String headers;
+
+    @PluginProperty(title = "Body", description = "Body for request")
+    String body;
+
     @Override
     public void executeStep(PluginStepContext pluginStepContext, Map<String, Object> options) throws StepException {
         PluginLogger log = pluginStepContext.getLogger();
 
-        // Parse out the options
-        String remoteUrl = options.containsKey("remoteUrl") ? options.get("remoteUrl").toString() : null;
-        String method = options.containsKey("method") ? options.get("method").toString() : null;
-        int timeout = options.containsKey("timeout") ? Integer.parseInt(options.get("timeout").toString()) : 30000;
-        String headers = options.containsKey("headers") ? options.get("headers").toString() : null;
-        String body = options.containsKey("body") ? options.get("body").toString() : null;
-
         if (remoteUrl == null || method == null) {
             throw new StepException("Remote URL and Method are required.", StepFailureReason.ConfigurationFailure);
+        }
+
+        if (timeout == 0) {
+            log.log(1, "TimeOut not entered, default: 30000 mills");
+            timeout = 30000;
         }
 
         if (remoteUrl.contains("${")) {
@@ -72,7 +79,7 @@ public class HttpWorkflowStepPlugin implements StepPlugin {
                 .setConnectTimeout(Duration.ofMillis(timeout))
                 .setReadTimeout(Duration.ofMillis(timeout)));
         } catch (GeneralSecurityException e) {
-            log.log(5, e.getMessage());
+            log.log(0, e.getMessage());
             restTemplate = new RestTemplateBuilder()
                 .setConnectTimeout(Duration.ofMillis(timeout))
                 .setReadTimeout(Duration.ofMillis(timeout))
@@ -97,7 +104,25 @@ public class HttpWorkflowStepPlugin implements StepPlugin {
         }
 
         try {
-            restTemplate.exchange(remoteUrl, Objects.requireNonNull(HttpMethod.resolve(method)), entity, String.class);
+            ResponseEntity<String> responseEntity = restTemplate.exchange(remoteUrl,
+                Objects.requireNonNull(HttpMethod.resolve(method)),
+                entity, String.class);
+            log.log(1, "######### PARAMETERS INPUT ##################");
+            log.log(2, "URL: " + remoteUrl);
+            log.log(2, "Method HTTP: " + method);
+            if (requestHeaders != null) {
+                log.log(2, "Headers:");
+                for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
+                    log.log(2, "Key: " + entry.getKey() + ", Value: " + entry.getValue());
+                }
+            }
+            if (body != null) {
+                log.log(2, "Body if Apply" + body);
+            }
+            log.log(1, "######### VALUES OUTPUT ##################");
+            log.log(2, "Response Body: " + responseEntity.getBody());
+            log.log(2, "Response Headers: " + responseEntity.getHeaders());
+            log.log(2, "Status Code" + responseEntity.getStatusCodeValue());
         } catch (Exception e) {
             throw new StepException(e.getCause(), StepFailureReason.ConfigurationFailure);
         }

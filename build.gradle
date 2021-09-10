@@ -1,22 +1,24 @@
-plugins {
-    id 'java'
-    id 'idea'
-}
+apply plugin: 'groovy'
+defaultTasks 'clean','build'
+apply plugin: 'java'
+apply plugin: 'idea'
 
 group 'com.example.webhook'
 version '0.1'
 
-defaultTasks 'clean','build'
-sourceCompatibility = 1.8
-ext.rundeckPluginVersion= '1.2'
-ext.rundeckVersion= '3.4.3-20210823'
+defaultTasks 'clean', 'build'
+ext.rundeckPluginVersion = '1.2'
+ext.rundeckVersion = '3.4.3-20210823'
+ext.pluginClassNames = 'com.example.webhook.HttpWorkflowStepPlugin'
+ext.pluginName = 'Rest HTTP Pluginl'
+ext.pluginDescription = 'Performs a GET, POST, PUT, DELETE to a rest resource'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compile( [group: 'org.rundeck', name: 'rundeck-core', version: rundeckVersion, ext:'jar'])
+    implementation 'org.rundeck:rundeck-core:3.4.3-20210823'
     implementation 'org.springframework.boot:spring-boot-starter-web:2.5.4'
     implementation 'org.springframework.boot:spring-boot-starter-cache:2.5.4'
     implementation 'org.yaml:snakeyaml:1.21'
@@ -34,12 +36,65 @@ test {
     useJUnit()
 }
 
-ext.pluginClassNames='com.example.webhook.HttpWorkflowStepPlugin'
 jar {
     manifest {
+        attributes 'Implementation-Title': 'plugin-demo'
+        attributes 'Implementation-Version': project.version
         attributes 'Rundeck-Plugin-Classnames': pluginClassNames
-        attributes 'Rundeck-Plugin-File-Version': version
+        attributes 'Rundeck-Plugin-Description': 'Excecute steps'
+        attributes 'Rundeck-Plugin-File-Version': project.version
         attributes 'Rundeck-Plugin-Version': rundeckPluginVersion, 'Rundeck-Plugin-Archive': 'true'
+        attributes 'Rundeck-Plugin-Date': '2021-09-10T12:12:55Z'
+        attributes 'Rundeck-Plugin-URL': 'https://rundeck.com'
+        attributes 'Rundeck-Plugin-Author': 'Rundeck, Inc.'
+        attributes 'Rundeck-Plugin-Version': rundeckPluginVersion
+        attributes 'Rundeck-Plugin-Name': pluginName
+        attributes 'Rundeck-Plugin-Archive': 'true'
     }
+}
+
+task('createPom').doLast {
+    pom {
+        project {
+            artifactId 'rundeck-job-state-plugin'
+            groupId project.group
+            inceptionYear '2015'
+            packaging 'jar'
+            version version
+            name "Rundeck Job State Plugin"
+            url 'http://rundeck.org'
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+            parent {
+                groupId project.group
+                artifactId "rundeck-bundled-plugins"
+                version(version)
+            }
+            build {
+                plugins {
+                    plugin {
+                        groupId 'org.apache.maven.plugins'
+                        artifactId 'maven-jar-plugin'
+                        version '2.3.2'
+                        configuration {
+                            archive {
+                                manifestEntries {
+                                    'Rundeck-Plugin-Classnames'(pluginClassNames)
+                                    'Rundeck-Plugin-Version'(rundeckPluginVersion)
+                                    'Rundeck-Plugin-Archive'('true')
+                                    'Rundeck-Plugin-File-Version'(version)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }.writeTo("pom.xml")
 }
 
