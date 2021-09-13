@@ -10,6 +10,7 @@ import com.dtolabs.rundeck.plugins.PluginLogger;
 import com.dtolabs.rundeck.plugins.ServiceNameConstants;
 import com.dtolabs.rundeck.plugins.descriptions.PluginDescription;
 import com.dtolabs.rundeck.plugins.descriptions.PluginProperty;
+import com.dtolabs.rundeck.plugins.descriptions.SelectValues;
 import com.dtolabs.rundeck.plugins.step.PluginStepContext;
 import com.dtolabs.rundeck.plugins.step.StepPlugin;
 import java.security.GeneralSecurityException;
@@ -40,6 +41,7 @@ public class HttpWorkflowStepPlugin implements StepPlugin {
     @PluginProperty(title = "Methods HTTP", description = "Must be: \"GET\", \"POST\", \"PUT\", \"PATCH\", " +
         "\"DELETE\", " +
         "\"HEAD\", \"OPTIONS\"", required = true)
+    @SelectValues(values = {"GET", "POST", "DELETE", "PUT", "PATCH", "HEAD", "OPTIONS"})
     String method;
 
     @PluginProperty(title = "Timeout", description = "Maximum wait time to respond, value in milliseconds.")
